@@ -51,6 +51,3 @@ Example:
         // Then you can reuse it with:
         // FluidTmpl.run("myTemplate", myData)
     </script>
-
-
-In your code, the following call
