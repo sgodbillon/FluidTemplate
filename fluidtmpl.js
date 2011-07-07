@@ -27,6 +27,9 @@
 					return s
 				}
 			}
+		},
+		runInsideTemplate: function(name, o) {
+			return ftmpl.utils.raw(ftmpl.run(name, o))
 		}
 	};
 
@@ -44,7 +47,7 @@
 	}
 
 	ftmpl.run = function(name, o) {
-		return this.compiledTemplates[name](o)
+		return compiledTemplates[name](o)
 	}
 
 	ftmpl.compile = function(name, source, recompile) {
@@ -56,7 +59,8 @@
 
 	ftmpl._compile = function(str, options) {
 		options = copyObj(copyObj({}, ftmpl.options), options || {})
-		var result = "var raw = window.FluidTmpl.utils.raw; var result = ''; _ = _ || {};"
+		var result = "var raw = window.FluidTmpl.utils.raw; var run = window.FluidTmpl.utils.runInsideTemplate; var compile = window.FluidTmpl.compile;"
+		result += "var result = ''; _ = _ || {};"
 
 		var tokens = {}
 
@@ -217,7 +221,7 @@
 		parseRaw(0)
 		result += "; return result;"
 
-		return function(o) {
+		var tmpl = function(o) {
 			var f = new Function('_', result)
 			if(o !== undefined && o !== null) {
 				if(o.constructor === Array) {
@@ -231,5 +235,9 @@
 			}
 			return ""
 		}
+
+		tmpl.isFluidTmpl = true
+
+		return tmpl;
 	}
 })(window.FluidTmpl = window.FluidTmpl || {})

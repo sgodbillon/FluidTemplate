@@ -5,19 +5,25 @@ This JavaScript template engine is designed to provide a fluid yet powerful synt
 * Light and expressive syntax
 * Autoescaping (may be disabled locally with the `raw()` function)
 * Handles arrays
+* Template composition
 
 # How to use it
 
 Example:
-
+    <script type="text/html" id="band">
+        <li>
+            <dl>
+                <dt>$(_.name)</dt>
+                <dl>$(_.genre)</dl>
+            </dl>
+        </li>
+    </script>
     <script type="text/html" id="myTemplate">
         <li>
             Favorite bands of $(_.sex === "M" ? "Mr." : "Mrs.") $(_.name) : $if(_.bands) { ($(_.bands.length)) }
             $if(_.bands) {
                 <ul>
-                $for(var i in _.bands) {
-                    <li>$(_.bands[i])</li>
-                }
+                    $(run("band", _.bands))
                 </ul>
             } else {
                 (Unknown)
@@ -25,22 +31,36 @@ Example:
         </li>
     </script>
     <script type="text/javascript">
+        // compile band to make it available in myTemplate
+        FluidTmpl.compile("band")
         var template = FluidTmpl.compile("myTemplate")
         document.getElementById("destination").innerHTML = template([
             {
                 name: "Joe",
                 sex: "M",
                 bands: [
-                    "Gojira",
-                    "Metallica"
+                    {
+                        name: "Gojira",
+                        genre: "Death Metal"
+                    },
+                    {
+                        name: "Metallica",
+                        genre: "Thrash Metal"
+                    }
                 ]
             },
             {
                 name: "Alice",
                 sex: "F",
                 bands: [
-                    "The Dandy Warhols",
-                    "Rodrigo & Gabriela"
+                    {
+                        name: "The Dandy Warhols",
+                        genre: "Rock"
+                    },
+                    {
+                        name: "Rodrigo & Gabriela",
+                        genre: "Folk"
+                    }
                 ]
             },
             {
