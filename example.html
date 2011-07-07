@@ -1,0 +1,51 @@
+<html>
+	<head>
+		<script type="text/javascript" src="fluidtmpl.js"></script>
+	</head>
+	<body>
+		<ul id="destination">
+			
+		</ul>
+		<script type="text/html" id="myTemplate">
+			<li>
+				Favorite bands of $(_.sex === "M" ? "Mr." : "Mrs.") $(_.name) : $if(_.bands) { ($(_.bands.length)) }
+				$if(_.bands) {
+					<ul>
+					$for(var i in _.bands) {
+						<li>$(_.bands[i])</li>
+					}
+					</ul>
+				} else {
+					(Unknown)
+				}
+			</li>
+		</script>
+		<script type="text/javascript">
+			var template = FluidTmpl.compile("myTemplate")
+			document.getElementById("destination").innerHTML = template([
+				{
+					name: "Joe",
+					sex: "M",
+					bands: [
+						"Gojira",
+						"Metallica"
+					]
+				},
+				{
+					name: "Alice",
+					sex: "F",
+					bands: [
+						"The Dandy Warhols",
+						"Rodrigo & Gabriela"
+					]
+				},
+				{
+					name: "Vince",
+					sex: "M"
+				}
+			]);
+			// you can reuse it with:
+			// FluidTmpl.run("myTemplate", myData)
+		</script>
+	</body>
+</html>
