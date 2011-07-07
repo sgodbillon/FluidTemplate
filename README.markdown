@@ -10,6 +10,7 @@ This JavaScript template engine is designed to provide a fluid yet powerful synt
 # How to use it
 
 Example:
+
     <script type="text/html" id="band">
         <li>
             <dl>
