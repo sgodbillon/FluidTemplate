@@ -15,7 +15,7 @@ Example:
         <li>
             <dl>
                 <dt>$(_.name)</dt>
-                <dl>$(_.genre)</dl>
+                <dd>$(_.genre)</dd>
             </dl>
         </li>
     </script>
