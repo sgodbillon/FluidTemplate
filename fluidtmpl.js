@@ -16,9 +16,16 @@
 (function(ftmpl) {
 	ftmpl.utils = {
 		escapeHTML: function(s) {
-			if(s.isRaw)
-				return s.toString()
 			return ('' + s).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace('/&/g', '&amp;')
+		},
+		stringify: function(s) {
+			if(s === null || s === undefined || typeof s === "number" && isNaN(s))
+				s = {
+					toString: function() {
+						return "";
+					}
+				}
+			return s.isRaw ? s : ftmpl.utils.escapeHTML(s)
 		},
 		raw: function(s) {
 			return {
@@ -68,7 +75,7 @@
 			name: options.specialChar + "(",
 			func: function(str, i, until) {
 				var next = findMatching(str, i + 1, '(')
-				result += "result += window.FluidTmpl.utils.escapeHTML((" + str.substring(i + 1, next) + "));"
+				result += "result += window.FluidTmpl.utils.stringify((" + str.substring(i + 1, next) + "));"
 				parseRaw(next + 1, until)
 			}
 		}
