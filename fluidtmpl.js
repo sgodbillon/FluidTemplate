@@ -221,7 +221,7 @@
 		parseRaw(0)
 		result += "; return result;"
 
-		var tmpl = function(o) {
+		return function(o) {
 			var f = new Function('_', result)
 			if(o !== undefined && o !== null) {
 				if(o.constructor === Array) {
@@ -235,9 +235,5 @@
 			}
 			return ""
 		}
-
-		tmpl.isFluidTmpl = true
-
-		return tmpl;
 	}
 })(window.FluidTmpl = window.FluidTmpl || {})
