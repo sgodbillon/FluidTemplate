@@ -6,6 +6,7 @@ This JavaScript template engine is designed to provide a fluid yet powerful synt
 * Autoescaping (may be disabled locally with the `raw()` function)
 * Handles arrays
 * Template composition
+* Syntax and runtime error reporting
 
 # How to use it
 
@@ -32,7 +33,7 @@ Example:
         </li>
     </script>
     <script type="text/javascript">
-        // compile band to make it available in myTemplate
+        // compile 'band' template to make it available in myTemplate
         FluidTmpl.compile("band")
         var template = FluidTmpl.compile("myTemplate")
         document.getElementById("destination").innerHTML = template([
