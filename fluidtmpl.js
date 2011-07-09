@@ -61,68 +61,93 @@
 		source = source || document.getElementById(name).innerHTML
 		if(!recompile && compiledTemplates[name])
 			return compiledTemplates[name]
-		return compiledTemplates[name] = this._compile(source)
+		return compiledTemplates[name] = this._compile(source, {}, name)
 	}
 
-	ftmpl._compile = function(str, options) {
+	ftmpl._compile = function(str, options, name) {
 		options = copyObj(copyObj({}, ftmpl.options), options || {})
+		name = name || ""
 		var result = "var raw = window.FluidTmpl.utils.raw; var run = window.FluidTmpl.utils.runInsideTemplate; var compile = window.FluidTmpl.compile;"
-		result += "var result = ''; _ = _ || {};"
+		result += "var _name = '" + name + "';var _line=0;try { var result = ''; _ = _ || {};"
 
-		var tokens = {}
-
-		tokens[options.specialChar + "("] = {
-			name: options.specialChar + "(",
-			func: function(str, i, until) {
-				var next = findMatching(str, i + 1, '(')
-				result += "result += window.FluidTmpl.utils.stringify((" + str.substring(i + 1, next) + "));"
-				parseRaw(next + 1, until)
-			}
-		}
-		tokens[options.specialChar + "if("] = {
-			name: options.specialChar + "if(",
-			func: function(str, i, until) {
-				var next = parenthesisBlock(str, i, "if", true)
-				var _else = eatWhiteSpaces(str, next + 1)
-				if(str.indexOf("else", _else) === _else) {
-					result += "else {"
-					_else = eatWhiteSpaces(str, _else + 4)
-					next = bracketBlock(str, _else)
-					result += "}"
+		var lines = {
+			indexes: [],
+			toLine: function(i) {
+				var tab = this.indexes.sort(function(a,b) { return a-b })
+				var matching = 1
+				var last = -1
+				for(var j = 0; j < tab.length; j++) {
+					if(tab[j] >= i)
+						return matching
+					last = tab[j]
+					matching++
 				}
-				parseRaw(next + 1, until)
+				return matching
 			}
 		}
-		tokens[options.specialChar + "for("] = {
-			name: options.specialChar + "for(",
-			func: function(str, i, until) {
-				var next = parenthesisBlock(str, i, "for", true)
-				parseRaw(next + 1, until)
+
+		var tokens = [
+			{
+				name: options.specialChar + "(",
+				func: function(str, i, until) {
+					var next = findMatching(str, i + 1, '(')
+					result += "result += window.FluidTmpl.utils.stringify((" + str.substring(i + 1, next) + "));"
+					parseRaw(next + 1, until)
+				}
+			},
+			{
+				name: options.specialChar + "if(",
+				func: function(str, i, until) {
+					var next = parenthesisBlock(str, i, "if", true)
+					var _else = eatWhiteSpaces(str, next + 1)
+					if(str.indexOf("else", _else) === _else) {
+						result += "else {"
+						_else = eatWhiteSpaces(str, _else + 4)
+						next = bracketBlock(str, _else)
+						result += "}"
+					}
+					parseRaw(next + 1, until)
+				}
+			},
+			{
+				name: options.specialChar + "for(",
+				func: function(str, i, until) {
+					var next = parenthesisBlock(str, i, "for", true)
+					parseRaw(next + 1, until)
+				}
+			},
+			{
+				name: options.specialChar + "while(",
+				func: function(str, i, until) {
+					var next = parenthesisBlock(str, i, "while", true)
+					parseRaw(next + 1, until)
+				}
+			},
+			{
+				name: ")",
+				raw: true
+			},
+			{
+				name: "(",
+				raw: true
+			},
+			{
+				name: "{",
+				raw: true
+			},
+			{
+				name: "}",
+				raw: true
+			},
+			{
+				name: "\n",
+				raw: true,
+				func: function(str, i) {
+					lines.indexes.push(i)
+					result += "_line=" + lines.toLine(i) + ";"
+				}
 			}
-		},
-		tokens[options.specialChar + "while("] = {
-			name: options.specialChar + "while(",
-			func: function(str, i, until) {
-				var next = parenthesisBlock(str, i, "while", true)
-				parseRaw(next + 1, until)
-			}
-		},
-		tokens[")"] = {
-			name: ")",
-			raw: true
-		};
-		tokens["("] = {
-			name: "(",
-			raw: true
-		};
-		tokens["{"] = {
-			name: "{",
-			raw: true
-		};
-		tokens["}"] = {
-			name: "}",
-			raw: true
-		};
+		]
 
 		function eatWhiteSpaces(str, i) {
 			while(i < str.length && /\s/.test(str.charAt(i))) i++
@@ -152,7 +177,7 @@
 				add(wrapRaw(buffer))
 				if(token.func) {
 					token.func(str, i, until)
-					return true
+					return !token.raw
 				}
 				if(token.raw)
 					add(wrapRaw(token.name))
@@ -181,7 +206,7 @@
 				}
 			})
 			if(found > -1) return found
-			throw {message: c + " at index " + i + " is not closed !"}
+			throw new Error("(FluidTemplate) template '" + name + "': syntax error at line " + lines.toLine(i) + ": '" + c + '" is not closed!')
 		}
 
 		function isToken(s) {
@@ -226,7 +251,7 @@
 		}
 
 		parseRaw(0)
-		result += "; return result;"
+		result += ";} catch(e) { var ne = new Error('(FluidTemplate) template \\'' + _name + '\\': error at line ' + _line + ', cause: ' + e.message); ne.cause = e; throw ne; } return result;"
 
 		return function(o) {
 			var f = new Function('_', result)
