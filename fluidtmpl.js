@@ -159,7 +159,7 @@
 			result += prepend + str.substring(i, next)
 			if(needBracketBlock) {
 				result += "{"
-				next = eatWhiteSpaces(str, next + 1)
+				next = eatWhiteSpaces(str, next)
 				next = bracketBlock(str, next)
 				result += "}"
 			}
