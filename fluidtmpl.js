@@ -17,26 +17,6 @@
 	ftmpl.utils = {
 		escapeHTML: function(s) {
 			return ('' + s).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace('/&/g', '&amp;')
-		},
-		stringify: function(s) {
-			if(s === null || s === undefined || typeof s === "number" && isNaN(s))
-				s = {
-					toString: function() {
-						return "";
-					}
-				}
-			return s.isRaw ? s : ftmpl.utils.escapeHTML(s)
-		},
-		raw: function(s) {
-			return {
-				isRaw: true,
-				toString: function() {
-					return s
-				}
-			}
-		},
-		runInsideTemplate: function(name, o) {
-			return ftmpl.utils.raw(ftmpl.run(name, o))
 		}
 	};
 
@@ -49,26 +29,52 @@
 		return into;
 	}
 
-	ftmpl.options = {
-		specialChar: '$'
+	function prepareOptions(options) {
+		var result = copyObj({
+			specialChar: options.specialChar || '$',
+			helpers: {}
+		}, options || {})
+		copyObj(result.helpers, {
+			raw: function(s) {
+				return {
+					isRaw: true,
+					toString: function() {
+						return s
+					}
+				}
+			},
+			run: function(name, o) {
+				return result.helpers.raw(ftmpl.run(name, o))
+			},
+			compile: ftmpl.compile,
+			stringify: function(s) {
+				if(s === null || s === undefined || typeof s === "number" && isNaN(s))
+					s = {
+						toString: function() {
+							return "";
+						}
+					}
+				return s.isRaw ? s : ftmpl.utils.escapeHTML(s)
+			}
+		})
+		return result
 	}
 
 	ftmpl.run = function(name, o) {
 		return compiledTemplates[name](o)
 	}
 
-	ftmpl.compile = function(name, source, recompile) {
+	ftmpl.compile = function(name, source, recompile, options) {
 		source = source || document.getElementById(name).innerHTML
 		if(!recompile && compiledTemplates[name])
 			return compiledTemplates[name]
-		return compiledTemplates[name] = this._compile(source, {}, name)
+		return compiledTemplates[name] = this._compile(source, options, name)
 	}
 
 	ftmpl._compile = function(str, options, name) {
-		options = copyObj(copyObj({}, ftmpl.options), options || {})
+		options = prepareOptions(options)
 		name = name || ""
-		var result = "var raw = window.FluidTmpl.utils.raw; var run = window.FluidTmpl.utils.runInsideTemplate; var compile = window.FluidTmpl.compile;"
-		result += "var _name = '" + name + "';var _line=0;try { var result = ''; _ = _ || {};"
+		var result = "var _name = '" + name + "';var _line=0; try { with(__options.helpers) { var result = ''; _ = _ || {};"
 
 		var lines = {
 			indexes: [],
@@ -91,7 +97,7 @@
 				name: options.specialChar + "(",
 				func: function(str, i, until) {
 					var next = findMatching(str, i + 1, '(')
-					result += "result += window.FluidTmpl.utils.stringify((" + str.substring(i + 1, next) + "));"
+					result += "result += stringify((" + str.substring(i + 1, next) + "));"
 					parseRaw(next + 1, until)
 				}
 			},
@@ -249,21 +255,20 @@
 			}
 			return buffer;
 		}
-
 		parseRaw(0)
-		result += ";} catch(e) { var ne = new Error('(FluidTemplate) template \\'' + _name + '\\': error at line ' + _line + ', cause: ' + e.message); ne.cause = e; throw ne; } return result;"
+		result += "; } } catch(e) { var ne = new Error('(FluidTemplate) template \\'' + _name + '\\': error at line ' + _line + ', cause: ' + e.message); ne.cause = e; throw ne; } return result;"
 
 		return function(o) {
-			var f = new Function('_', result)
+			var f = new Function('_', '__options', result)
 			if(o !== undefined && o !== null) {
 				if(o.constructor === Array) {
 					var finalResult = ""
 					for(var i = 0; i < o.length; i++)
-						finalResult += f(o[i])
+						finalResult += f(o[i], options)
 					return finalResult
 				}
 				if(o.constructor === Object)
-					return f(o)
+					return f(o, options)
 			}
 			return ""
 		}
