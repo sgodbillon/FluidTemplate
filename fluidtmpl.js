@@ -74,7 +74,7 @@
 	ftmpl._compile = function(str, options, name) {
 		options = prepareOptions(options)
 		name = name || ""
-		var result = "var _name = '" + name + "';var _line=0; try { with(__options.helpers) { var result = ''; _ = _ || {};"
+		var result = "var _name = '" + name + "';var _line=0; try { with(_arg) { var result = '';"
 
 		var lines = {
 			indexes: [],
@@ -97,7 +97,7 @@
 				name: options.specialChar + "(",
 				func: function(str, i, until) {
 					var next = findMatching(str, i + 1, '(')
-					result += "result += stringify((" + str.substring(i + 1, next) + "));"
+					result += "result += _.stringify((" + str.substring(i + 1, next) + "));"
 					parseRaw(next + 1, until)
 				}
 			},
@@ -259,17 +259,16 @@
 		result += "; } } catch(e) { var ne = new Error('(FluidTemplate) template \\'' + _name + '\\': error at line ' + _line + ', cause: ' + e.message); ne.cause = e; throw ne; } return result;"
 
 		return function(o) {
-			var f = new Function('_', '__options', result)
-			if(o !== undefined && o !== null) {
-				if(o.constructor === Array) {
-					var finalResult = ""
-					for(var i = 0; i < o.length; i++)
-						finalResult += f(o[i], options)
-					return finalResult
-				}
-				if(o.constructor === Object)
-					return f(o, options)
+			var f = new Function('_arg', '_', '_options', result);
+			o = o || {};
+			if(o.constructor === Array) {
+				var finalResult = ""
+				for(var i = 0; i < o.length; i++)
+					finalResult += f(o[i], options)
+				return finalResult
 			}
+			if(o.constructor === Object)
+				return f(o, options.helpers, options)
 			return ""
 		}
 	}
