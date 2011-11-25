@@ -31,7 +31,7 @@
 
 	function prepareOptions(options) {
 		var result = copyObj({
-			specialChar: options.specialChar || '$',
+			specialChar: '$',
 			helpers: {}
 		}, options || {})
 		copyObj(result.helpers, {
