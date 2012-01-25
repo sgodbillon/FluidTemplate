@@ -97,7 +97,7 @@
 				name: options.specialChar + "(",
 				func: function(str, i, until) {
 					var next = findMatching(str, i + 1, '(')
-					result += "result += _.stringify((" + str.substring(i + 1, next) + "));"
+					result += "result += _.helpers.stringify((" + str.substring(i + 1, next) + "));"
 					parseRaw(next + 1, until)
 				}
 			},
